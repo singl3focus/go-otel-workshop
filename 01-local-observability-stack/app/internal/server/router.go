@@ -4,10 +4,11 @@ import (
 	"log/slog"
 	"net/http"
 
+	"go.opentelemetry.io/otel"
+
 	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app/internal/server/handlers"
 	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app/internal/server/middleware"
 	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app/internal/service"
-	"go.opentelemetry.io/otel"
 )
 
 func NewRouter(appName string, logger *slog.Logger) http.Handler {

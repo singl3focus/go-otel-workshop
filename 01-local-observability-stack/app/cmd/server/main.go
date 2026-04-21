@@ -17,7 +17,7 @@ import (
 func main() {
 	cfg := config.LoadFromEnv()
 	logger := newLogger(cfg.LogLevel)
-	
+
 	otelShutdown, err := observability.Setup(context.Background(), cfg.AppName, cfg.OTLPExporterEndpoint)
 	if err != nil {
 		logger.Error("failed to initialize OpenTelemetry", "error", err)

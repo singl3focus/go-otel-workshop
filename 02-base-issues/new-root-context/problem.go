@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"time"
 
-	baseissues "github.com/singl3focus/go-otel-workshop/02-base-issues"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	baseissues "github.com/singl3focus/go-otel-workshop/02-base-issues"
 )
 
 // =========================
@@ -61,6 +62,7 @@ func (s *Service) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("order created\n"))
 }
 
+//nolint:staticcheck // SA4009: intentional anti-pattern — см. коммент ниже, это и есть демонстрируемый bad-путь.
 func (s *Service) CreateOrder(ctx context.Context) error {
 	// ПЛОХО:
 	// Мы теряем trace от входящего HTTP-запроса и создаем новый root span.

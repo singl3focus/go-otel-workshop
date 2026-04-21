@@ -5,10 +5,11 @@ import (
 	"log"
 	"time"
 
-	baseissues "github.com/singl3focus/go-otel-workshop/02-base-issues"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+
+	baseissues "github.com/singl3focus/go-otel-workshop/02-base-issues"
 )
 
 // =========================

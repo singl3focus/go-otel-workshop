@@ -12,6 +12,8 @@ import (
 //
 // TODO: все spans в цепочке должны принадлежать одному трейсу —
 // добейся того, чтобы exercise_test.go стал зеленым.
+//
+//nolint:staticcheck // SA4009: intentional anti-pattern — ctx намеренно заменен на context.Background(), задание — найти и починить.
 func CreateOrder(ctx context.Context, tracer trace.Tracer) error {
 	ctx, span := tracer.Start(context.Background(), "service.create_order")
 	defer span.End()

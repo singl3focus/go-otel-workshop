@@ -1,0 +1,39 @@
+version: "2"
+
+run:
+  timeout: "5m"
+  tests: true
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - ineffassign
+    - whitespace
+    - gocyclo
+
+formatters:
+  enable:
+    - gofmt
+    - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - localmodule
+
+issues:
+  new: false
+  fix: true
+
+output: 
+  show-stats: true
+  formats:
+    text:
+      path: reports/linters-out.txt
+      print-linter-name: true
+      print-issued-lines: true
+      colors: true
