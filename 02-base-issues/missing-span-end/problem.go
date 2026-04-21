@@ -1,10 +1,11 @@
-package baseissues
+package main
 
 import (
 	"context"
 	"log"
 	"time"
 
+	baseissues "github.com/singl3focus/go-otel-workshop/02-base-issues"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -12,23 +13,25 @@ import (
 // =========================
 // good.span завершится и уйдет в export path.
 // broken.span — нет, потому что завершение span связано с End(),
-// а Shutdown завершает processors, но не “додумывает” за тебя незавершенные spans. TracerProvider.Shutdown(ctx) закрывает провайдер и processors;
+// а Shutdown завершает processors, но не "додумывает" за тебя незавершенные spans.
+// TracerProvider.Shutdown(ctx) закрывает провайдер и processors;
 // после него методы становятся no-op.
 // =========================
 
-func main2() {
-	tp := newTracerProvider("example-missing-span-end")
+func main() {
+	ctx := context.Background()
+
+	tp := baseissues.NewTracerProvider("example-missing-span-end")
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
+
 		_ = tp.Shutdown(ctx)
 	}()
 
 	otel.SetTracerProvider(tp)
 
-	tracer := otel.Tracer("examples/03-missing-span-end")
-
-	ctx := context.Background()
+	tracer := otel.Tracer("02-base-issues/missing-span-end")
 
 	{
 		_, span := tracer.Start(ctx, "good.span")

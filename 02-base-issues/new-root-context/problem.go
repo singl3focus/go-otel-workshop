@@ -1,4 +1,4 @@
-package baseissues
+package main
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	baseissues "github.com/singl3focus/go-otel-workshop/02-base-issues"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -19,8 +20,8 @@ import (
 // Контекст должен проходить через вызовы вниз по стеку, а otelhttp.NewHandler как раз создает span для входящего запроса.
 // =========================
 
-func main1() {
-	tp := newTracerProvider("example-new-root-context") // attribute.String("env", "local") нужен ли?
+func main() {
+	tp := baseissues.NewTracerProvider("example-new-root-context")
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
@@ -30,7 +31,7 @@ func main1() {
 	otel.SetTracerProvider(tp)
 
 	svc := &Service{
-		tracer: otel.Tracer("examples/02-new-root-context"),
+		tracer: otel.Tracer("02-base-issues/new-root-context"),
 	}
 
 	mux := http.NewServeMux()
@@ -63,9 +64,7 @@ func (s *Service) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
 func (s *Service) CreateOrder(ctx context.Context) error {
 	// ПЛОХО:
 	// Мы теряем trace от входящего HTTP-запроса и создаем новый root span.
-	ctx = context.Background()
-
-	ctx, span := s.tracer.Start(ctx, "service.create_order")
+	ctx, span := s.tracer.Start(context.Background(), "service.create_order")
 	defer span.End()
 
 	span.SetAttributes(attribute.String("order.id", "123"))

@@ -1,4 +1,4 @@
-module github.com/singl3focus/go-otel-workshop/examples/01-local-observability-stack/app
+module github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app
 
 go 1.25.1
 
