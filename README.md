@@ -63,7 +63,3 @@ golangci-lint run
 
 Отчёт пишется в [reports/linters-out.txt](reports/linters-out.txt) (папка в `.gitignore`, генерится локально).
 
-## Дальнейшее чтение
-
-- [docs/base-issues/missing-span-end.md](docs/base-issues/missing-span-end.md) — полный разбор жизненного цикла span'а: что именно происходит в SDK, если забыть `End()`, и почему `runtime.SetFinalizer` не спасает.
-- [docs/internal-context-propagation/detached-background-context.md](docs/internal-context-propagation/detached-background-context.md) — `r.Context()` в фоновой горутине, `context.WithoutCancel` как примитив, альтернативы для worker-pool.
