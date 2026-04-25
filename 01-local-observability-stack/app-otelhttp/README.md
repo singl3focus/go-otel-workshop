@@ -20,6 +20,7 @@ Env vars: `APP_NAME`, `HTTP_PORT`, `LOG_LEVEL`, `OTEL_EXPORTER_OTLP_ENDPOINT`.
 ## В чём разница с app-manual
 
 Сравнение в [01-local-observability-stack/README.md](../README.md). Коротко:
-ручной middleware из app-manual здесь заменён на `otelhttp.NewHandler` +
-`otelhttp.WithRouteTag` на каждом маршруте. Общий пакет `observability/`
+ручной middleware из app-manual здесь заменён на `otelhttp.NewHandler` с
+`WithSpanNameFormatter` (имя span формируется из `r.Pattern`, который
+ServeMux Go 1.22+ проставляет после dispatch). Общий пакет `observability/`
 (OTel SDK setup) у обоих app один.
