@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app/internal/config"
-	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app/internal/observability"
-	serverpkg "github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app/internal/server"
+	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app-manual/internal/config"
+	serverpkg "github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app-manual/internal/server"
+	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/observability"
 )
 
 func main() {

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app/internal/service"
+	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app-otelhttp/internal/service"
 )
 
 type Handlers struct {

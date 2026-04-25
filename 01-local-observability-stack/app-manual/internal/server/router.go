@@ -6,9 +6,9 @@ import (
 
 	"go.opentelemetry.io/otel"
 
-	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app/internal/server/handlers"
-	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app/internal/server/middleware"
-	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app/internal/service"
+	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app-manual/internal/server/handlers"
+	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app-manual/internal/server/middleware"
+	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app-manual/internal/service"
 )
 
 func NewRouter(appName string, logger *slog.Logger) http.Handler {

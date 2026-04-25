@@ -29,9 +29,12 @@ func Setup(ctx context.Context, serviceName string, otlpEndpoint string) (Shutdo
 		return nil, err
 	}
 
+	// NewSchemaless (без SchemaURL) сливается с resource.Default() без конфликта,
+	// даже когда SDK по умолчанию использует более свежий semconv (v1.40.0+),
+	// чем тот, на который мы здесь импортнулись.
 	res, err := resource.Merge(
 		resource.Default(),
-		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceName(serviceName)),
+		resource.NewSchemaless(semconv.ServiceName(serviceName)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create otel resource: %w", err)
