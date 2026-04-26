@@ -14,6 +14,9 @@
 | [03-nested-spans/](03-nested-spans/) | parent/child через `context.Context` |
 | [04-resource/](04-resource/) | `service.name` и почему он важен |
 | [05-batcher-vs-syncer/](05-batcher-vs-syncer/) | `WithBatcher` без `Shutdown` теряет span'ы |
+| [06-propagator-mapcarrier/](06-propagator-mapcarrier/) | ручной `Inject`/`Extract` через `propagation.MapCarrier` |
+| [07-links-vs-parent/](07-links-vs-parent/) | разница между parent-child и `trace.Link` |
+| [08-global-vs-explicit-tracerprovider/](08-global-vs-explicit-tracerprovider/) | global `otel.Tracer(...)` vs явный `tp.Tracer(...)` |
 
 ## Как запускать
 
@@ -31,3 +34,5 @@ cd 01-minimal && go run .
 - Контекст-пропагация внутри процесса — [03-internal-context-propagation/](../03-internal-context-propagation/).
 - Трассировка без HTTP (миграции, реконсиляция, bulk) —
   [04-non-standard-cases/](../04-non-standard-cases/).
+- Trace propagation между сервисами через HTTP —
+  [05-cross-service-propagation/](../05-cross-service-propagation/).

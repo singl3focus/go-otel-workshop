@@ -1,2 +1,4 @@
 docs/
 reports/
+.gocache/
+.golangci-cache/

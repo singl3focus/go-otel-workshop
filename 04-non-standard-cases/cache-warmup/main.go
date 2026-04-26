@@ -63,7 +63,7 @@ func run(ctx context.Context) (err error) {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			
+
 			w, m := worker(ctx, tracer, id, tasks)
 			atomic.AddInt64(&warmed, int64(w))
 			atomic.AddInt64(&miss, int64(m))
