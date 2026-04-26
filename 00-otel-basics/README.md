@@ -17,6 +17,7 @@
 | [06-propagator-mapcarrier/](06-propagator-mapcarrier/) | ручной `Inject`/`Extract` через `propagation.MapCarrier` |
 | [07-links-vs-parent/](07-links-vs-parent/) | разница между parent-child и `trace.Link` |
 | [08-global-vs-explicit-tracerprovider/](08-global-vs-explicit-tracerprovider/) | global `otel.Tracer(...)` vs явный `tp.Tracer(...)` |
+| [09-semconv-vs-manual/](09-semconv-vs-manual/) | ручные строки атрибутов vs `semconv` константы/конструкторы и почему это важно |
 
 ## Как запускать
 
