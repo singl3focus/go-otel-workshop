@@ -1,3 +1,5 @@
+//go:build !solution
+
 package main
 
 import (
@@ -9,7 +11,12 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-// ReserveInventory открывает business span и вызывает inventory-сервис.
+// EN: ReserveInventory starts a business span and calls the inventory service.
+//
+// TODO: propagate the trace over HTTP, create an outbound client span,
+// and make exercise_test.go pass.
+//
+// RU: ReserveInventory открывает business span и вызывает inventory-сервис.
 //
 // TODO: downstream HTTP handler должен попасть в тот же trace, что и caller.
 // Добейся того, чтобы exercise_test.go прошел зеленым.

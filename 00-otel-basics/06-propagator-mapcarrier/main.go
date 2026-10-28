@@ -11,7 +11,14 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
-// Propagator переносит trace context через key/value carrier
+// EN: A propagator carries trace context through a key/value carrier.
+// For HTTP, the carrier is the request headers; here it is a MapCarrier.
+//
+// Inject writes the active span context as traceparent.
+// Extract reads traceparent and returns a context with a remote parent.
+// tracer.Start(extractedCtx, ...) then joins the same trace.
+//
+// RU: Propagator переносит trace context через key/value carrier
 // (carrier — это объект, куда propagator умеет записать и откуда умеет прочитать
 // ключи propagation; в HTTP таким carrier'ом являются headers).
 //

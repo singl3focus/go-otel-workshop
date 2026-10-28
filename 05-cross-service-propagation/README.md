@@ -1,59 +1,47 @@
-# 05. Cross-service propagation
+# 05 · Trace context across HTTP services
 
-Как trace context переходит через границу процесса: HTTP handler → business span → outbound HTTP client → downstream HTTP handler. Это следующий шаг после [03-internal-context-propagation/](../03-internal-context-propagation/): внутри процесса достаточно передавать `context.Context`, но между сервисами trace-id/span-id должны уехать в сетевые заголовки.
+[English](README.md) | [Русский](README.ru.md)
 
-## Демонстрация проблемы
+English is the original; the Russian translation is maintained alongside it.
 
-```bash
+The gateway calls inventory: inbound server span → business span → outbound
+client span → downstream server span. Context in memory does not cross the
+network automatically; the HTTP transport must inject propagation headers.
+
+## Observe the broken demo
+
+```sh
 go run .
 ```
 
-Запускаются два HTTP-сервера:
+The gateway listens on 8080 and inventory on 8081. In another terminal
+(`curl.exe` in Windows PowerShell):
 
-- `gateway` на `:8080`;
-- `inventory` на `:8081`.
-
-В другом терминале:
-
-```bash
+```sh
 curl -i http://localhost:8080/checkout
 ```
 
-Оба сервиса обернуты в `otelhttp.NewHandler`, поэтому входящие server spans создаются. Но `gateway` вызывает `inventory` обычным `http.Client`, без `otelhttp.NewTransport`. Из-за этого в исходящий HTTP-запрос не попадает `traceparent`, и `inventory` начинает новый trace.
+Both servers use `otelhttp.NewHandler`, but the gateway uses a plain `http.Client`.
+Inventory logs an empty `traceparent` and creates a different TraceID.
+The two servers run in one process to keep setup small; they still communicate
+over HTTP, so the propagation boundary is real.
 
-Код демонстрации: [problem.go](problem.go).
+## Repair the exercise
 
-## Формат упражнения
+Edit `ReserveInventory` in [exercise.go](exercise.go). Keep its business span,
+preserve the caller's context, and instrument the outbound transport.
 
-Как в [02-base-issues/](../02-base-issues/), раздел оформлен как самостоятельный `package main`:
-
-- `problem.go` — запускаемая демонстрация антипаттерна (`go run .`);
-- `exercise.go` — функция-стаб, которую нужно починить;
-- `exercise_test.go` — тест на `tracetest.SpanRecorder` + `httptest.Server`, который становится зеленым после корректного исправления (`go test .`);
-- `solution.go` — эталонное решение под build-тегом `solution`, по умолчанию не компилируется;
-- `helper.go` — общий `stdouttrace` TracerProvider для демонстрации.
-
-## Задача
-
-Починить функцию `ReserveInventory` в [exercise.go](exercise.go) так, чтобы прошел тест:
-
-```bash
+```sh
 go test .
+go test -tags=solution .
 ```
 
-Тест проверяет три вещи:
+The first command initially fails; the second selects [solution.go](solution.go).
+The test uses `httptest.Server`, so it does not require ports 8080/8081.
+It checks the shared TraceID, presence of a client span, and the downstream
+server's parent being that client span. Read the [request helper](helper.go)
+for client copying, request context, and response body cleanup.
 
-- downstream handler получил тот же TraceID, что и родительский span;
-- появился outbound client span;
-- downstream server span стал child span'ом outbound client span.
-
-Эталонное решение: [solution.go](solution.go) под build-тегом `solution`.
-
-## Главное правило
-
-`context.Context` сам по себе не пересекает сеть. Он только хранит активный span внутри процесса. На HTTP-границе нужен propagator:
-
-- server side: `otelhttp.NewHandler(...)` извлекает `traceparent` из входящих заголовков;
-- client side: `otelhttp.NewTransport(...)` создает client span и инжектит `traceparent` в исходящий запрос.
-
-Если инструментирована только server side, каждый сервис будет честно писать spans, но trace развалится на несколько независимых root.
+The original `go run .` demonstration remains broken after the exercise is fixed.
+Revisit [in-process context](../03-internal-context-propagation/README.md)
+to distinguish context ownership from network propagation.

@@ -75,7 +75,11 @@ func run(ctx context.Context) (err error) {
 	return nil
 }
 
-// indexBatch - span на БАТЧ, не на документ.
+// EN: indexBatch creates one span per BATCH, not per document.
+// At high volume, per-document spans increase export and storage costs.
+// Use events for individual failures and attributes for batch totals.
+//
+// RU: indexBatch - span на БАТЧ, не на документ.
 //
 // Почему: при 10M документов span-per-doc ложит экспортер и стоимость хранения.
 // Уровень батча - естественная граница observability: latency batch-запроса
@@ -89,7 +93,9 @@ func indexBatch(ctx context.Context, tracer trace.Tracer, offset, size int) (ind
 	)
 	defer span.End()
 
-	// имитация bulk-запроса в поисковый движок
+	// EN: Simulate a bulk request to a search engine.
+	//
+	// RU: имитация bulk-запроса в поисковый движок
 	time.Sleep(50 * time.Millisecond)
 
 	for i := 0; i < size; i++ {

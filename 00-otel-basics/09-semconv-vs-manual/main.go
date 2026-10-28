@@ -11,32 +11,29 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 )
 
-// Зачем нужен semconv.
+// EN: Semantic conventions define shared attribute names and types.
+// Backends and instrumentation can use those conventions for consistent
+// queries and views; backend features vary.
 //
-// OpenTelemetry-спецификация фиксирует имена и типы атрибутов, которые
-// бэкенды (Jaeger/Tempo/Datadog/Honeycomb) умеют распознавать "из коробки":
-// строят по ним готовые дашборды HTTP/DB/RPC, считают RED-метрики, делают
-// фасеты в UI. Имя атрибута — это контракт между приложением и бэкендом.
+// go.opentelemetry.io/otel/semconv/vX.Y.Z provides generated keys and typed
+// constructors. The import path selects a convention version; it is not
+// the SDK version. A resource schema URL identifies that version.
 //
-// Пакет go.opentelemetry.io/otel/semconv/vX.Y.Z — кодген этого контракта:
+// Handwritten strings can contain silent typos, obsolete names, or wrong
+// types. Different schema URLs produce an error when resources are merged;
+// that is separate from normal same-key attribute precedence.
 //
-//   - имена атрибутов как константы или конструкторы (semconv.HTTPRequestMethod);
-//   - правильные типы (status_code → int, не string);
-//   - версия спеки прошита в import path: апгрейд = осознанная замена импорта;
-//   - SchemaURL для resource.Merge, чтобы версии не молча затирали друг друга.
+// RU: Semantic conventions задают общие имена и типы атрибутов.
+// Это помогает инструментаторам и бэкендам согласованно строить запросы
+// и представления; доступные функции зависят от бэкенда.
 //
-// Что ломается без semconv:
+// Пакет go.opentelemetry.io/otel/semconv/vX.Y.Z содержит сгенерированные ключи
+// и типизированные конструкторы. Версия в импорте относится к соглашениям,
+// а не к SDK. SchemaURL ресурса указывает версию схемы.
 //
-//  1. Опечатки тихие. attribute.String("htttp.method", ...) — не ошибка
-//     компиляции, но в бэкенде атрибут не подхватится.
-//  2. Несовпадение с авто-инструментациями. otelhttp/otelgrpc/otelsql пишут
-//     по semconv. Если твой ручной span назовёт то же поле иначе, в трассе
-//     будут два разных атрибута на одно и то же.
-//  3. Неправильные типы. http.response.status_code в спеке — int. Если
-//     записать строкой, бэкенд может его не распарсить как число и
-//     фильтр "5xx" сломается.
-//  4. Расхождение версий спеки между сервисами. Без SchemaURL у ресурса
-//     слияние через resource.Merge молча теряет конфликтующие атрибуты.
+// Ручные строки допускают незаметные опечатки, устаревшие имена и неверные
+// типы. Разные непустые SchemaURL дают ошибку при resource.Merge.
+// Это отдельный механизм от приоритета значений атрибутов с одинаковым ключом.
 func main() {
 	exp, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
 	if err != nil {
@@ -48,7 +45,11 @@ func main() {
 
 	tracer := otel.Tracer("00-otel-basics/09-semconv-vs-manual")
 
-	// Вариант 1. Ручные строки.
+	// EN: Variant 1: handwritten strings.
+	// Export still succeeds, despite a typo, obsolete attribute names,
+	// and a string value where the convention requires an integer.
+	//
+	// RU: Вариант 1. Ручные строки.
 	//
 	// Работает, экспорт пройдет. Но:
 	//   - "htttp.method" — опечатка, не словит ни компилятор, ни линтер;
@@ -56,14 +57,18 @@ func main() {
 	//   - status_code как строка — типичная ошибка, дашборды по int сломаются.
 	_, manualSpan := tracer.Start(context.Background(), "GET /users/:id [manual]")
 	manualSpan.SetAttributes(
-		attribute.String("htttp.method", "GET"),        // опечатка
-		attribute.String("http.status_code", "200"),    // устаревшее имя + неверный тип
-		attribute.String("http.target", "/users/42"),   // устаревшее имя (теперь url.path)
-		attribute.String("net.peer.name", "users-api"), // устаревшее имя (теперь server.address)
+		attribute.String("htttp.method", "GET"),        // EN: typo. RU: опечатка.
+		attribute.String("http.status_code", "200"),    // EN: obsolete name and wrong type. RU: устаревшее имя и неверный тип.
+		attribute.String("http.target", "/users/42"),   // EN: obsolete; now url.path. RU: устарело, теперь url.path.
+		attribute.String("net.peer.name", "users-api"), // EN: obsolete; now server.address. RU: устарело, теперь server.address.
 	)
 	manualSpan.End()
 
-	// Вариант 2. Через semconv.
+	// EN: Variant 2: generated semantic conventions.
+	// Names and constructor argument types are checked by the compiler.
+	// The versioned import makes convention upgrades explicit.
+	//
+	// RU: Вариант 2. Через semconv.
 	//
 	// Имена и типы заданы константами/конструкторами. Опечатка → ошибка
 	// компиляции. Тип status_code зафиксирован как int. Версия спеки

@@ -29,9 +29,13 @@ func Setup(ctx context.Context, serviceName string, otlpEndpoint string) (Shutdo
 		return nil, err
 	}
 
-	// NewSchemaless (без SchemaURL) сливается с resource.Default() без конфликта,
-	// даже когда SDK по умолчанию использует более свежий semconv (v1.40.0+),
-	// чем тот, на который мы здесь импортнулись.
+	// EN: NewSchemaless omits a schema URL so this resource can merge with
+	// resource.Default even when it uses a different semconv version.
+	// This avoids a schema-URL conflict; it does not translate attributes.
+	//
+	// RU: NewSchemaless не задаёт SchemaURL, поэтому ресурс можно объединить
+	// с resource.Default при другой версии semconv без конфликта URL схем.
+	// Имена и значения атрибутов при этом не преобразуются.
 	res, err := resource.Merge(
 		resource.Default(),
 		resource.NewSchemaless(semconv.ServiceName(serviceName)),

@@ -11,7 +11,17 @@ import (
 	"github.com/singl3focus/go-otel-workshop/01-local-observability-stack/app-otelhttp/internal/service"
 )
 
-// NewRouter собирает HTTP-обработчик с auto-инструментацией через otelhttp.
+// EN: NewRouter assembles the HTTP handler with otelhttp instrumentation.
+//
+// Compare app-manual: its tracing middleware extracts the parent, creates
+// a server span, records HTTP attributes, and ends the span manually.
+// otelhttp.NewHandler handles those steps here.
+//
+// WithSpanNameFormatter uses r.Pattern after ServeMux dispatch, producing
+// names such as "GET /work". Before dispatch it uses the operation name.
+// RequestLogging reads the active span regardless of who created it.
+//
+// RU: NewRouter собирает HTTP-обработчик с auto-инструментацией через otelhttp.
 //
 // Сравни с app-manual: там middleware/request_tracing.go руками тащит
 // propagator.Extract, открывает server-span, проставляет semconv-атрибуты

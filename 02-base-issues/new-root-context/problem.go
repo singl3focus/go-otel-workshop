@@ -14,7 +14,12 @@ import (
 	baseissues "github.com/singl3focus/go-otel-workshop/02-base-issues"
 )
 
-// =========================
+// EN: The /orders request has an incoming otelhttp server span, but
+// service.create_order starts a separate trace because the business code
+// replaces the request context with context.Background.
+// Pass the incoming context down the handler/service/repository chain.
+//
+// RU: =========================
 // При запросе на /orders у тебя будет входящий span от otelhttp,
 // но service.create_order станет новым root span,
 // потому что бизнес-логика перетерла входной ctx через context.Background().
@@ -40,7 +45,7 @@ func main() {
 
 	handler := otelhttp.NewHandler(mux, "http.server")
 
-	log.Println("listening on :8080")
+	log.Println("listening / сервер слушает :8080")
 	if err := http.ListenAndServe(":8080", handler); err != nil {
 		log.Fatal(err)
 	}
@@ -59,12 +64,18 @@ func (s *Service) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	_, _ = w.Write([]byte("order created\n"))
+	_, _ = w.Write([]byte("order created / заказ создан\n"))
 }
 
-//nolint:staticcheck // SA4009: intentional anti-pattern — см. коммент ниже, это и есть демонстрируемый bad-путь.
+// EN: Intentional anti-pattern: the following method discards its input ctx.
+//
+// RU: Намеренный антипаттерн: следующий метод отбрасывает входящий ctx.
+//
+//nolint:staticcheck // SA4009: intentional exercise / намеренное упражнение
 func (s *Service) CreateOrder(ctx context.Context) error {
-	// ПЛОХО:
+	// EN: BAD: discard the incoming HTTP trace and create a new root span.
+	//
+	// RU: ПЛОХО:
 	// Мы теряем trace от входящего HTTP-запроса и создаем новый root span.
 	ctx, span := s.tracer.Start(context.Background(), "service.create_order")
 	defer span.End()

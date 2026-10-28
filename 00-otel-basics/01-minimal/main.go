@@ -9,7 +9,17 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
-// Минимальный путь от пустого main до записанного span:
+// EN: The smallest path from an empty main to an exported span:
+//
+// 1. An exporter sends spans to stdout, OTLP, or another destination.
+// 2. A TracerProvider owns the processing pipeline and creates tracers.
+// 3. otel.SetTracerProvider configures the provider used by otel.Tracer.
+// 4. tracer.Start returns a span and a context containing that span.
+// 5. span.End finishes the span and hands it to the processor.
+// 6. tp.Shutdown flushes pending spans and releases resources.
+// WithSyncer exports synchronously here; still keep the shutdown habit.
+//
+// RU: Минимальный путь от пустого main до записанного span:
 //
 //  1. exporter           — куда отправлять (stdout, OTLP, ...).
 //  2. TracerProvider     — фабрика трейсеров; держит pipeline экспортеров.

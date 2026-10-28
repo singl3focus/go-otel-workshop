@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func CreateOrderSolution(ctx context.Context, tracer trace.Tracer) error {
+func CreateOrder(ctx context.Context, tracer trace.Tracer) error {
 	ctx, span := tracer.Start(ctx, "service.create_order")
 	defer span.End()
 

@@ -1,43 +1,31 @@
-# 04. Non-standard cases — трассировка без входящего запроса
+# 04 · Jobs, batches, and CLI programs
 
-Четыре сценария, где нет HTTP handler'а и нет готового `ctx` с trace-состоянием: процесс сам стартует root span, сам управляет его жизненным циклом и сам отвечает за flush перед выходом.
+[English](README.md) | [Русский](README.ru.md)
 
-## Формат
+English is the original; the Russian translation is maintained alongside it.
 
-Как в [03-internal-context-propagation/](../03-internal-context-propagation/) — подпапки самостоятельные, запускаются `go run .`, спаны идут в stdout через `stdouttrace` (см. [helper.go](helper.go)). Это эталонные версии, не упражнения.
+Four complete demonstrations start traces without an incoming HTTP request.
+They use the shared [stdout exporter helper](helper.go) and flush on normal exit.
 
-## Общие принципы
+| Scenario | Trace boundary | Aggregates |
+| --- | --- | --- |
+| [migrations](migrations/README.md) | Root per migration run; child per migration | Applied and total migrations |
+| [batch-reconciliation](batch-reconciliation/README.md) | New root per periodic tick | Processed and failed items |
+| [reindex](reindex/README.md) | Root per run; child per document batch | Indexed/failed counts, failure events |
+| [cache-warmup](cache-warmup/README.md) | Root per run; child per worker | Warmed/missing keys |
 
-1. **Нет входящего ctx → сами создаём root span.** Старт всегда от `context.Background()`. Никаких `r.Context()`, никаких наследуемых cancel'ов.
-2. **Shutdown обязателен.** Батч-экспортер держит спаны в буфере; без `tp.Shutdown(ctx)` с таймаутом короткоживущие CLI теряют последние спаны.
-3. **Периодический запуск → новый root на тик.** Один span на всю петлю = бесконечно растущая трасса. Каждый тик — `tracer.Start(..., trace.WithNewRoot())`.
-4. **Bulk операции → span на батч, не на элемент.** 10M документов × span = span-storm. Используй счётчики-атрибуты и span events для отдельных элементов.
-5. **Root-span получает итоговые счётчики.** `processed`, `failed`, `skipped` как атрибуты root. Диагностика по одному span'у без агрегаций.
-6. **Ошибки: `RecordError` + `SetStatus(codes.Error, ...)`.** И то, и другое — RecordError кладёт event со стектрейсом, SetStatus влияет на UI/alerting.
+From this directory:
 
-## Список примеров
-
-### [migrations/](migrations/) — трассировка миграций
-
-Один root `migrations.run` на прогон, child span на каждую миграцию. На root'е оседают `migrations.total` и `migrations.applied`, чтобы по одному span'у было видно, где прогон прервался.
-
-### [batch-reconciliation/](batch-reconciliation/) — cron/reconciliation job
-
-Long-running процесс с тикером. **Каждый тик — отдельный root span с `trace.WithNewRoot()`.** Свой таймаут на тик через `context.WithTimeout`. Остановка по SIGINT/SIGTERM через `signal.NotifyContext`, flush в defer.
-
-### [reindex/](reindex/) — bulk reindex
-
-Span на батч, не на документ. Ошибки отдельных документов — через `span.AddEvent("doc.failed", ...)`. Итоговые `indexed`/`failed` на root-span.
-
-### [cache-warmup/](cache-warmup/) — прогрев кэша после деплоя
-
-Fan-out на N воркеров, общий root, span на воркера. В данном случае ctx пробрасывается напрямую (воркеры не переживают `run()`), поэтому trick'а с `SpanContext only` из [03/worker-pool-context](../03-internal-context-propagation/worker-pool-context/) здесь не нужно.
-
-## Как запускать
-
-```bash
-cd 04-non-standard-cases/<case>
-go run .
+```sh
+go run ./migrations
 ```
 
-Для `batch-reconciliation` процесс крутится до Ctrl+C — остановка триггерит graceful shutdown и flush экспортера.
+Choose trace boundaries that describe a finite operation. Batch/worker spans
+avoid creating a span per item. Keep a bounded shutdown context to flush the
+exporter after work completes. When an operation fails, `RecordError` adds an
+exception event; `SetStatus(codes.Error, ...)` sets its error status separately.
+
+The simulated delays in these examples use `time.Sleep`; declaring a timeout
+does not interrupt a sleep. Pass context to real downstream clients and check
+cancellation in loops. These examples illustrate instrumentation boundaries,
+not a complete resilient job runner.

@@ -1,33 +1,32 @@
-# worker-pool-context — очередь, передаём SpanContext, не ctx
+# Worker pool context
 
-Альтернативный путь к проблеме из [../detached-background-context/](../detached-background-context/) применительно к воркер-пулам. Вместо того чтобы класть в job весь `ctx` (унаследовали бы cancel запроса и middleware-values, которые в воркере не нужны), кладётся только `trace.SpanContext` родителя. В воркере ctx собирается с нуля: `context.Background()` + `trace.ContextWithSpanContext(...)` для линковки трассы + `context.WithTimeout(...)` для своего дедлайна.
+[English](README.md) | [Русский](README.ru.md)
 
-## Как запустить
+English is the original; the Russian translation is maintained alongside it.
 
-```bash
+Two workers consume jobs from an in-memory channel. A job stores only a
+`trace.SpanContext` and an order ID, not the complete request context.
+
+```sh
 go run .
 ```
 
-В другом терминале:
+In another terminal (`curl.exe` in Windows PowerShell):
 
-```bash
+```sh
 curl -i http://localhost:8080/enqueue
 ```
 
-## Что увидеть в выводе
+The response is 202. Expect `http.enqueue`, its child `handler.enqueue`, and
+`worker.process` whose parent is `handler.enqueue`. All three share a TraceID.
+`worker.process` includes `worker.id` and `order.id`; its status stays Unset.
+Scheduling can start the worker before or after the handler returns.
 
-После одного запроса `stdouttrace` напечатает три span'а в одной трассе:
+The worker reconstructs a context with `trace.ContextWithSpanContext`, then
+sets its own timeout. The demo uses `time.Sleep`, which does not observe that
+timeout; real I/O should receive and honor the context.
+For a separate trace linked to its producer, see
+[links versus parents](../../00-otel-basics/07-links-vs-parent/).
 
-```
-http.enqueue        <- otelhttp, server-span
-  handler.enqueue   <- a.tracer
-worker.process      <- общий TraceID, parent = SpanContext из job
-```
-
-Ключевая деталь: `worker.process` стартует **после** того, как handler вернул ответ клиенту. Если бы воркер использовал `r.Context()`, span попал бы в трассу с `status=Error`, потому что ctx уже отменён. Здесь он `status=Ok`, у `worker.process` есть атрибуты `worker.id` и `order.id`. TraceID совпадает с `http.enqueue`/`handler.enqueue` — линковка через `SpanContext` сохраняется.
-
-При нескольких запросах подряд: TraceID у каждой пары `handler.enqueue` / `worker.process` свой, но внутри пары совпадает.
-
-## Что дальше
-
-- Сравнение с другими альтернативами (`WithoutCancel` в handler'е vs в воркере, `trace.Link`, propagator через `MapCarrier`) — [docs/internal-context-propagation/detached-background-context.md](../../docs/internal-context-propagation/detached-background-context.md#4-когда-withoutcancel-не-нужен-worker-pool-как-граничный-случай).
+For cancellation-aware I/O, overload rejection, and shutdown, continue with
+[worker-pool-lifecycle](../worker-pool-lifecycle/README.md).

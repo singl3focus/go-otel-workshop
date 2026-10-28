@@ -18,7 +18,11 @@ func (r *statusRecorder) WriteHeader(status int) {
 	r.ResponseWriter.WriteHeader(status)
 }
 
-// RequestLogging пишет slog по каждому запросу и подмешивает trace_id/span_id
+// EN: RequestLogging records an slog entry with trace_id and span_id from
+// the active span in the request context. The outer otelhttp.NewHandler
+// creates the server span before this middleware runs.
+//
+// RU: RequestLogging пишет slog по каждому запросу и подмешивает trace_id/span_id
 // активного span'а из ctx. Сам span создаёт outer-обёртка — в этом app это
 // otelhttp.NewHandler, который проставляет server-span до того, как запрос
 // дойдёт до этого middleware.

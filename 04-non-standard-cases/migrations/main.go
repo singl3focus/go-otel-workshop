@@ -34,7 +34,9 @@ func main() {
 
 func run(ctx context.Context) (err error) {
 	tp := nsc.NewTracerProvider("example-migrations")
-	// CLI короткоживущий - без Shutdown батчер не успевает вытолкнуть последние спаны.
+	// EN: A short-lived CLI must flush the batch processor before exiting.
+	//
+	// RU: CLI короткоживущий - без Shutdown батчер не успевает вытолкнуть последние спаны.
 	defer func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -44,7 +46,9 @@ func run(ctx context.Context) (err error) {
 	otel.SetTracerProvider(tp)
 	tracer := otel.Tracer("04-non-standard-cases/migrations")
 
-	// Нет входящего ctx - root span создаём сами.
+	// EN: There is no incoming request context: start a root span explicitly.
+	//
+	// RU: Нет входящего ctx - root span создаём сами.
 	ctx, root := tracer.Start(ctx, "migrations.run",
 		trace.WithAttributes(
 			attribute.String("db.system", "postgres"),
@@ -62,7 +66,9 @@ func run(ctx context.Context) (err error) {
 	var applied int
 	for _, m := range schema {
 		if err = apply(ctx, tracer, m); err != nil {
-			// Счётчик applied оседает на root даже при падении - по одному спану
+			// EN: Record the applied count even on failure so the root shows progress.
+			//
+			// RU: Счётчик applied оседает на root даже при падении - по одному спану
 			// видно, на какой миграции порвалось.
 			root.SetAttributes(attribute.Int("migrations.applied", applied))
 			return err
@@ -87,7 +93,9 @@ func apply(ctx context.Context, tracer trace.Tracer, m migration) (err error) {
 		span.End()
 	}()
 
-	// имитация исполнения SQL драйвером БД
+	// EN: Simulate a database driver executing SQL.
+	//
+	// RU: имитация исполнения SQL драйвером БД
 	time.Sleep(80 * time.Millisecond)
 	return nil
 }

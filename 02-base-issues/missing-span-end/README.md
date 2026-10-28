@@ -1,21 +1,27 @@
-# Exercise: missing `span.End()`
+# Exercise · missing span.End()
 
-## Демонстрация проблемы
+[English](README.md) | [Русский](README.ru.md)
 
-```bash
+English is the original; the Russian translation is maintained alongside it.
+
+## Observe
+
+```sh
 go run .
 ```
 
-В выводе `stdouttrace` будет только `good.span`; `broken.span` в экспорт не попадет. Код демонстрации: [problem.go](problem.go).
+Only `good.span` is exported; `broken.span` never calls End. Provider shutdown does not finish open spans.
 
-## Задача
+## Repair
 
-Починить функцию `DoWork` в [exercise.go](exercise.go) так, чтобы прошел тест:
+Edit `DoWork` in [exercise.go](exercise.go). Finish `demo.operation` and preserve its `demo=exercise` attribute. The test must see exactly one ended span.
 
-```bash
+```sh
 go test .
+go test -tags=solution .
 ```
 
-## Эталонное решение
-
-Лежит в [solution.go](solution.go) под build-тегом `solution` (по умолчанию не компилируется, чтобы не конфликтовать с `exercise.go`). Открывать только после того, как попробовал сам.
+The first command checks your answer and initially fails. The second selects
+the [reference solution](solution.go) without overwriting your work.
+Keep the broken [demonstration](problem.go) for comparison.
+Return to [all exercises](../README.md).

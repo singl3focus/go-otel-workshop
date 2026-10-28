@@ -1,38 +1,20 @@
-# cache-warmup — fan-out на воркеры, span на воркера
+# Cache warmup with worker spans
 
-CLI прогревает кэш: 200 ключей, 4 воркера, общий канал задач. Главная идея: **span на воркера, не на ключ**. Отдельные мисс-события идут через `span.AddEvent`, агрегаты — через атрибуты воркера. На root поднимаются итоговые `keys.warmed` / `keys.miss`.
+[English](README.md) | [Русский](README.ru.md)
 
-В отличие от [../../03-internal-context-propagation/worker-pool-context/](../../03-internal-context-propagation/worker-pool-context/), здесь **ctx пробрасывается напрямую** — воркеры живут только внутри `run()`, ждать их завершения мы и так должны через `wg.Wait()`. Трюк с «передаём только `SpanContext`» здесь не нужен: нет cancel'а, от которого нужно отвязаться, нет переживания родителя.
+English is the original; the Russian translation is maintained alongside it.
 
-## Как запустить
+## Run
 
-```bash
+```sh
 go run .
 ```
 
-## Что увидеть в выводе
+## Expected trace
 
-`stdouttrace` напечатает пять span'ов одной трассы:
+Four workers consume 200 keys from a shared channel. Expect five spans in one trace: `cache.warmup` and four `cache.worker` children. Workers overlap in time, and each records `worker.id`, `worker.warmed`, and `worker.miss`.
 
-```
-cache.warmup            <- root
-  cache.worker (id=0)
-  cache.worker (id=1)
-  cache.worker (id=2)
-  cache.worker (id=3)
-```
+The deterministic demo rule is `len(key)%10 != 0`: all generated keys pass, so root totals are `keys.warmed=200` and `keys.miss=0`. It is not a random 10% failure simulation. Change the rule to explore miss events. Workers share the parent context safely because `wg.Wait()` keeps the run alive until they finish.
 
-На root — `keys.total=200`, `workers=4`, плюс итоговые `keys.warmed` и `keys.miss`. На каждом `cache.worker` — `worker.id`, `worker.warmed`, `worker.miss`, плюс events `warm.miss` для каждого промаха (имитация: ~10% ключей).
-
-Воркеры стартуют параллельно, их `cache.worker` span'ы перекрываются по времени — это видно по их `startTime`/`endTime`.
-
-## Ключевые идеи
-
-- **Span на воркера**, не на ключ. 1M ключей × span = взрыв трассировки.
-- **Промахи как events** на span'е воркера. Дёшево и достаточно для разбора, что именно не нашлось.
-- **Прямой проброс ctx безопасен**, потому что воркеры не переживают `run()` — `wg.Wait()` гарантирует, что мы не выйдем раньше них. Этот случай — антипод проблемы `detached-background-context`.
-
-## Что дальше
-
-- Worker-pool, в котором воркеры **переживают** handler — [../../03-internal-context-propagation/worker-pool-context/](../../03-internal-context-propagation/worker-pool-context/). Сравнение моделей.
-- Bulk reindex (span на батч) — [../reindex/](../reindex/).
+Spans use the stdout batch exporter; allow its export delay or wait for normal
+process completion. See [all job examples](../README.md).

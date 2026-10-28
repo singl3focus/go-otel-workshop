@@ -1,39 +1,32 @@
-# detached-background-context — фон, переживающий handler
+# Detached background work
 
-Два эндпоинта рядом, чтобы сравнить поведение. Полный разбор (что именно делает net/http с request ctx, чем `context.WithoutCancel` отличается от `context.Background`, какие альтернативы есть для worker-pool) — в [docs/internal-context-propagation/detached-background-context.md](../../docs/internal-context-propagation/detached-background-context.md). Здесь — только запуск и что увидеть в трассе.
+[English](README.md) | [Русский](README.ru.md)
 
-## Как запустить
+English is the original; the Russian translation is maintained alongside it.
 
-```bash
+Run the server, then send the two requests from another terminal:
+
+```sh
 go run .
 ```
 
-В другом терминале:
-
-```bash
+```sh
 curl -i http://localhost:8080/bad
 curl -i http://localhost:8080/good
 ```
 
-## Что увидеть в выводе
+Use `curl.exe` in Windows PowerShell. Both return 202 immediately. After a short
+delay the worker starts its span and simulates a context-aware downstream call.
 
-### `/bad`
+| Path | Background context | Result |
+| --- | --- | --- |
+| `/bad` | Original request context | `background.bad` records cancellation and Error |
+| `/good` | `WithoutCancel` plus a two-second timeout | `background.good` completes with Unset status and `context.mode=detached` |
 
-Горутина уносит `r.Context()`. К моменту, когда фон делает `simulateDownstreamCall`, net/http уже отменил ctx (handler вернулся). В `stdouttrace`:
+Both background spans retain their HTTP parent's TraceID. Cancellation affects
+the simulated work, not the presence of the parent SpanContext.
+The good goroutine owns its `cancel` call; placing `defer cancel()` in the handler
+would cancel its new context as soon as the response returns.
 
-- span `http.bad` уезжает первым, сразу после ответа клиенту;
-- span `background.bad` уезжает следом — у него `status=Error`, в events лежит `RecordError("context canceled")`;
-- TraceID у обоих общий — линковка трассы сама по себе сохраняется, ломается именно downstream-вызов.
-
-### `/good`
-
-Перед запуском горутины в handler'е делается `bg := context.WithoutCancel(r.Context())` + `context.WithTimeout(bg, 2s)`. Cancel родителя на фон не распространяется, values (включая активный span) сохраняются.
-
-- span `http.good` уезжает первым;
-- span `background.good` — `status=Ok`, атрибут `context.mode=detached`;
-- TraceID общий, downstream отрабатывает штатно.
-
-## Что дальше
-
-- Альтернатива для очередей и воркер-пулов (передавать только `SpanContext`, ctx собирать с нуля) — [../worker-pool-context/](../worker-pool-context/).
-- Полный разбор и альтернативы — [docs/internal-context-propagation/detached-background-context.md](../../docs/internal-context-propagation/detached-background-context.md).
+See the [deep dive](../../docs/internal-context-propagation/detached-background-context.md)
+and [worker queue alternative](../worker-pool-context/README.md).
