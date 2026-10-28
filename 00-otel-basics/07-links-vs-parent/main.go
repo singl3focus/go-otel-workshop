@@ -12,7 +12,12 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Parent и Link отвечают на разные вопросы.
+// EN: A parent and a link express different relationships.
+//
+// A child is part of its parent's operation and shares its trace.
+// A link records a relationship without making the target its parent.
+//
+// RU: Parent и Link отвечают на разные вопросы.
 //
 // Parent-child — это одна причинная цепочка: child является частью операции parent.
 // Link — это связь без иерархии: span связан с другим span'ом, но не становится его child.

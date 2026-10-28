@@ -16,13 +16,13 @@ func TestCreateOrder_InheritsParentTrace(t *testing.T) {
 
 	ctx, parent := tracer.Start(context.Background(), "test.parent")
 	if err := CreateOrder(ctx, tracer); err != nil {
-		t.Fatalf("CreateOrder вернул ошибку: %v", err)
+		t.Fatalf("CreateOrder returned an error / CreateOrder вернул ошибку: %v", err)
 	}
 	parent.End()
 
 	ended := sr.Ended()
 	if len(ended) != 3 {
-		t.Fatalf("ожидалось 3 завершенных span (test.parent, service.create_order, repo.save_order), получено %d", len(ended))
+		t.Fatalf("expected 3 ended spans / ожидались 3 завершённых спана (test.parent, service.create_order, repo.save_order), got %d", len(ended))
 	}
 
 	parentTraceID := parent.SpanContext().TraceID()
@@ -31,7 +31,7 @@ func TestCreateOrder_InheritsParentTrace(t *testing.T) {
 	var createOrderSpan sdktrace.ReadOnlySpan
 	for _, s := range ended {
 		if s.SpanContext().TraceID() != parentTraceID {
-			t.Errorf("span %q: TraceID %s отличается от родительского %s — span отделился от трейса",
+			t.Errorf("span %q: TraceID %s differs from parent / отличается от родительского %s",
 				s.Name(), s.SpanContext().TraceID(), parentTraceID)
 		}
 		if s.Name() == "service.create_order" {
@@ -40,10 +40,10 @@ func TestCreateOrder_InheritsParentTrace(t *testing.T) {
 	}
 
 	if createOrderSpan == nil {
-		t.Fatal("span service.create_order не найден")
+		t.Fatal("service.create_order span not found / спан service.create_order не найден")
 	}
 	if createOrderSpan.Parent().SpanID() != parentSpanID {
-		t.Errorf("service.create_order.parent_span_id = %s, ожидался %s",
+		t.Errorf("service.create_order.parent_span_id = %s, expected / ожидался %s",
 			createOrderSpan.Parent().SpanID(), parentSpanID)
 	}
 }

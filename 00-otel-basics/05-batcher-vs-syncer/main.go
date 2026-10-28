@@ -8,18 +8,24 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
-// WithSyncer  — экспорт прямо в span.End(). Подходит для тестов и CLI.
-// WithBatcher — спан кладется в очередь, экспорт по таймеру или при заполнении.
+// EN: WithSyncer exports during span.End, useful for small demos and tests.
+// WithBatcher queues spans and exports periodically or when a batch fills.
 //
-//	Без tp.Shutdown короткая программа выйдет до того, как буфер
-//	выгрузится — спан потеряется.
+// A short process can exit before its queue is exported without Shutdown.
+// Run as-is: buffered.span may not appear. Uncomment the deferred Shutdown
+// to flush it reliably. A fast background export can still win the race.
 //
-// Запусти как есть — увидишь, что в выводе НЕТ спана "buffered.span":
-// батчер не успел вытолкнуть очередь до выхода main. Раскомментируй строку
-// с defer Shutdown — спан появится.
+// Continue with 02-base-issues/missing-tracerprovider-shutdown/.
 //
-// Это и есть точка входа в антипаттерн "missing TracerProvider Shutdown" —
-// см. 02-base-issues/missing-tracerprovider-shutdown/.
+// RU: WithSyncer экспортирует спан при End: удобно для небольших примеров и тестов.
+// WithBatcher ставит спаны в очередь и экспортирует по таймеру или размеру батча.
+//
+// Без Shutdown короткий процесс может выйти раньше экспорта.
+// Запустите как есть: buffered.span может отсутствовать. Раскомментируйте
+// отложенный Shutdown, чтобы надёжно выгрузить очередь. Быстрый фоновый
+// экспорт иногда успевает сработать и без него.
+//
+// Следующее упражнение: 02-base-issues/missing-tracerprovider-shutdown/.
 func main() {
 	exp, _ := stdouttrace.New(stdouttrace.WithPrettyPrint())
 

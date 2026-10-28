@@ -1,0 +1,78 @@
+name: Workshop checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go / ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - 00-otel-basics
+          - 01-local-observability-stack
+          - 02-base-issues
+          - 03-internal-context-propagation
+          - 04-non-standard-cases
+          - 05-cross-service-propagation
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+      - name: Build student examples
+        run: go build -mod=readonly ./...
+      - name: Test reference solutions and runnable examples
+        run: go test -mod=readonly -race -count=1 -timeout=60s -tags=solution ./...
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - run: python scripts/check_docs.py
+
+
+  local-stack:
+    name: Collector and Jaeger integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: 01-local-observability-stack
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: 01-local-observability-stack/go.mod
+          cache-dependency-path: 01-local-observability-stack/go.sum
+      - name: Validate Compose
+        run: docker compose config --quiet
+      - name: Start pinned backends
+        run: docker compose up -d --wait --wait-timeout 60
+      - name: Wait for HTTP readiness
+        run: go run ./cmd/stack-ready -timeout=45s
+      - name: Verify stored traces from both applications
+        run: go test -mod=readonly -race -tags=integration -run TestLocalStack -count=1 -v -timeout=90s ./app-manual/internal/server ./app-otelhttp/internal/server
+      - name: Backend logs
+        if: always()
+        run: docker compose logs --no-color
+      - name: Stop local backends
+        if: always()
+        run: docker compose down

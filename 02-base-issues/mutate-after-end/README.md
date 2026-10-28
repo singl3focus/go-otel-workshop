@@ -1,21 +1,27 @@
-# Exercise: mutate after End()
+# Exercise · mutations after End
 
-## Демонстрация проблемы
+[English](README.md) | [Русский](README.ru.md)
 
-```bash
+English is the original; the Russian translation is maintained alongside it.
+
+## Observe
+
+```sh
 go run .
 ```
 
-В выводе `stdouttrace` у span `mutate.after.end` будут только те атрибуты и статус, что записаны **до** `End()`; все мутации после `End()` молча игнорируются. Код демонстрации: [problem.go](problem.go).
+`phase=before-end` and Ok survive; `phase=after-end`, `late-event`, and the late Error status do not change the completed span.
 
-## Задача
+## Repair
 
-Починить функцию `DoWork` в [exercise.go](exercise.go) так, чтобы прошел тест:
+Edit `DoWork` in [exercise.go](exercise.go). Record `result=success` and status Ok while the span is recording, then finish it. The test checks the exported final state.
 
-```bash
+```sh
 go test .
+go test -tags=solution .
 ```
 
-## Эталонное решение
-
-[solution.go](solution.go) под build-тегом `solution`.
+The first command checks your answer and initially fails. The second selects
+the [reference solution](solution.go) without overwriting your work.
+Keep the broken [demonstration](problem.go) for comparison.
+Return to [all exercises](../README.md).

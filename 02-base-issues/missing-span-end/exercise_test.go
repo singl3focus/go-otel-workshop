@@ -14,20 +14,20 @@ func TestDoWork_SpanEnded(t *testing.T) {
 	t.Cleanup(func() { _ = tp.Shutdown(context.Background()) })
 
 	if err := DoWork(context.Background(), tp.Tracer("test")); err != nil {
-		t.Fatalf("DoWork вернул ошибку: %v", err)
+		t.Fatalf("DoWork returned an error / DoWork вернул ошибку: %v", err)
 	}
 
 	ended := sr.Ended()
 	if len(ended) != 1 {
-		t.Fatalf("ожидался 1 завершенный span, получено %d", len(ended))
+		t.Fatalf("expected 1 ended span / ожидался 1 завершённый спан, got %d", len(ended))
 	}
 
 	got := ended[0]
 	if got.Name() != "demo.operation" {
-		t.Errorf("имя span: got %q, want %q", got.Name(), "demo.operation")
+		t.Errorf("span name / имя спана: got %q, want %q", got.Name(), "demo.operation")
 	}
 	if got.EndTime().IsZero() {
-		t.Error("EndTime пустой — span не был завершен")
+		t.Error("empty EndTime: span was not ended / пустой EndTime: спан не завершён")
 	}
 
 	var demo string
@@ -37,6 +37,6 @@ func TestDoWork_SpanEnded(t *testing.T) {
 		}
 	}
 	if demo != "exercise" {
-		t.Errorf("attribute demo: got %q, want %q", demo, "exercise")
+		t.Errorf("demo attribute / атрибут demo: got %q, want %q", demo, "exercise")
 	}
 }

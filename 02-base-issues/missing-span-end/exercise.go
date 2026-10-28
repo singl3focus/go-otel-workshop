@@ -1,3 +1,5 @@
+//go:build !solution
+
 package main
 
 import (
@@ -7,7 +9,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// DoWork открывает span "demo.operation" с атрибутом demo=exercise.
+// EN: DoWork starts demo.operation with the demo=exercise attribute.
+//
+// TODO: ensure the span finishes and exercise_test.go passes.
+//
+// RU: DoWork открывает span "demo.operation" с атрибутом demo=exercise.
 //
 // TODO: span должен быть корректно принят и успешно отработан —
 // добейся того, чтобы exercise_test.go прошел зеленым.

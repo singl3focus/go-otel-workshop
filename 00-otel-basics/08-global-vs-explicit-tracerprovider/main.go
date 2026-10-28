@@ -12,7 +12,12 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 )
 
-// otel.SetTracerProvider задает global provider для otel.Tracer(...).
+// EN: otel.SetTracerProvider configures the global provider for otel.Tracer.
+//
+// Use tp.Tracer explicitly when the caller owns the provider, such as in
+// tests and libraries. This avoids depending on global configuration.
+//
+// RU: otel.SetTracerProvider задает global provider для otel.Tracer(...).
 //
 // Но TracerProvider можно использовать и явно через tp.Tracer(...). Это удобно
 // в тестах и библиотеках: код не обязан зависеть от глобального состояния.

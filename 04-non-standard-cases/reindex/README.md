@@ -1,37 +1,20 @@
-# reindex — bulk reindex, span на батч
+# Batch reindexing
 
-CLI прогоняет 500 «документов» батчами по 100 в имитируемый поисковый движок. Главная идея: **span на батч, не на документ**. При 10M документов span-per-doc ложит экспортер и стоимость хранения. Уровень батча — естественная граница observability: latency bulk-запроса, retries, размер. Отдельные документы — через `span.AddEvent`.
+[English](README.md) | [Русский](README.ru.md)
 
-## Как запустить
+English is the original; the Russian translation is maintained alongside it.
 
-```bash
+## Run
+
+```sh
 go run .
 ```
 
-## Что увидеть в выводе
+## Expected trace
 
-`stdouttrace` напечатает шесть span'ов одной трассы:
+Five hundred simulated documents are processed in five batches of 100. Expect six spans in one trace: `reindex.run` and five `reindex.batch` children. There is no span per document.
 
-```
-reindex.run                  <- root
-  reindex.batch (offset=0,   size=100)
-  reindex.batch (offset=100, size=100)
-  reindex.batch (offset=200, size=100)
-  reindex.batch (offset=300, size=100)
-  reindex.batch (offset=400, size=100)
-```
+Documents at offsets 0, 137, 274, and 411 produce `doc.failed` events with `doc.id` and `reason=validation`. Root totals are `reindex.indexed=496` and `reindex.failed=4`. The simulated batch operation completes, so its status remains Unset despite individual failures.
 
-На root — `index.name=orders_v3`, `source.total=500`, `batch.size=100`, плюс итоговые `reindex.indexed` и `reindex.failed`. На каждом `reindex.batch` — `batch.offset`, `batch.size`, `batch.indexed`, `batch.failed`.
-
-Имитация валидации роняет каждый 137-й документ. На таких документах span-батча содержит **events** `doc.failed` с атрибутами `doc.id` и `reason=validation`. Сам span — `status=Unset` (батч прошёл, отдельные документы — отдельная история).
-
-## Ключевые идеи
-
-- **Span на батч, не на документ.** Иначе spans-storm.
-- **Документ-failures как events**, а не как отдельные span'ы. Events дешевле и логически правильнее: они привязаны к моменту времени внутри батча.
-- **Агрегаты — атрибутами на root.** `reindex.indexed` и `reindex.failed` обновляются и в success-, и в error-ветке (см. defer на root). По одному span'у видно итог прогона.
-
-## Что дальше
-
-- Миграции (один root, span на миграцию) — [../migrations/](../migrations/).
-- Fan-out на воркеры — [../cache-warmup/](../cache-warmup/).
+Spans use the stdout batch exporter; allow its export delay or wait for normal
+process completion. See [all job examples](../README.md).

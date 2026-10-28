@@ -11,12 +11,19 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 )
 
-// Resource — атрибуты, общие для ВСЕХ span'ов из этого процесса:
-// service.name, service.version, host, container, k8s-метки. Бэкенды по
-// service.name группируют сервисы, без него span'ы попадают в "unknown_service".
+// EN: A resource describes the entity producing telemetry: service.name,
+// service.version, host, container, and Kubernetes metadata.
+// Backends can group spans by service.name.
 //
-// NewSchemaless удобно использовать когда не хочешь думать про SchemaURL —
-// такой ресурс корректно сливается через resource.Merge с любым другим.
+// NewSchemaless omits a schema URL, avoiding a schema-URL conflict when
+// merging with another resource. It does not migrate attribute names.
+//
+// RU: Resource описывает источник телеметрии: service.name,
+// service.version, хост, контейнер и метаданные Kubernetes.
+// Бэкенд может группировать спаны по service.name.
+//
+// NewSchemaless не задаёт SchemaURL и позволяет избежать конфликта URL схем
+// при resource.Merge. Имена атрибутов он не преобразует.
 func main() {
 	exp, _ := stdouttrace.New(stdouttrace.WithPrettyPrint())
 

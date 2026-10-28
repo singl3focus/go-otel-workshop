@@ -1,33 +1,24 @@
-# sync-request-context — baseline propagation через ctx
+# Synchronous request context
 
-Корректный синхронный путь: `handler → service → repo`, ctx идёт по цепочке без подмен. Все span'ы попадают в **одну** трассу с правильной иерархией parent/child. Используется как точка отсчёта для остальных кейсов раздела.
+[English](README.md) | [Русский](README.ru.md)
 
-## Как запустить
+English is the original; the Russian translation is maintained alongside it.
 
-```bash
+From this directory, run the server and request `/sync` in another terminal:
+
+```sh
 go run .
 ```
 
-В другом терминале:
-
-```bash
+```sh
 curl -i http://localhost:8080/sync
 ```
 
-## Что увидеть в выводе
+Use `curl.exe` in Windows PowerShell. The response is `sync ok`.
+The HTTP server span contains `handler.sync`, then `service.process`, then
+`repo.save` as nested children. All four share one TraceID.
+The service span includes `flow.type=sync`.
 
-`stdouttrace` напечатает четыре span'а одной трассы (один TraceID, цепочка ParentSpanID):
-
-```
-http.sync          <- otelhttp, server-span
-  handler.sync     <- a.tracer
-    service.process
-      repo.save
-```
-
-`service.process` несёт атрибут `flow.type=sync`. `repo.save` — самый глубокий, у него нет потомков. Все четыре span'а имеют одинаковый TraceID; ParentSpanID каждого следующего совпадает со SpanID предыдущего.
-
-## Что дальше
-
-- Если фон/очереди/воркеры обрезают трассу — [../detached-background-context/](../detached-background-context/) и [../worker-pool-context/](../worker-pool-context/).
-- Если входящий trace context теряется уже на уровне handler'а — упражнение [../../02-base-issues/new-root-context/](../../02-base-issues/new-root-context/).
+Each function receives the caller's context and passes the context returned by
+`tracer.Start` to its child. Replacing it with `context.Background()` would break
+the chain. Use this example as the baseline for [background work](../detached-background-context/README.md).

@@ -1,33 +1,20 @@
-# migrations — трассировка прогона миграций
+# Migration runs
 
-CLI без HTTP. Один root span на весь прогон, child span на каждую миграцию. Итоговые счётчики (`migrations.total`, `migrations.applied`) оседают на root, чтобы по одному span'у было видно, где прогон прервался, без агрегаций по детям.
+[English](README.md) | [Русский](README.ru.md)
 
-## Как запустить
+English is the original; the Russian translation is maintained alongside it.
 
-```bash
+## Run
+
+```sh
 go run .
 ```
 
-## Что увидеть в выводе
+## Expected trace
 
-`stdouttrace` напечатает четыре span'а одной трассы:
+Three simulated SQL migrations run sequentially. Expect four spans in one trace: `migrations.run` and three `migration.apply` children. The root has `db.system=postgres`, `migrations.total=3`, and `migrations.applied=3`; children have `migration.name`.
 
-```
-migrations.run               <- root, без HTTP-родителя
-  migration.apply (001_create_users.sql)
-  migration.apply (002_add_email_index.sql)
-  migration.apply (003_backfill_status.sql)
-```
+The root retains the applied count if a migration fails. Normal completion leaves status Unset. Errors are recorded on the failed child and root. Shutdown flushes the batch processor before the short CLI exits.
 
-На root — атрибуты `db.system=postgres`, `migrations.total=3`, `migrations.applied=3`. На каждом child — `migration.name`. В happy-path `status=Unset` у всех. Если бы `apply` вернул ошибку, `migrations.applied` на root отразил бы сколько успело пройти до падения, а сам root и упавший child получили бы `RecordError` + `status=Error`.
-
-## Ключевые идеи
-
-- **Нет входящего ctx → root создаём сами** от `context.Background()`.
-- **`tp.Shutdown` обязателен:** CLI короткоживущий, без shutdown'а батчер не успеет вытолкнуть последние span'ы.
-- **Счётчики на root** `migrations.applied` обновляются и в success-, и в error-ветке — диагностика без обхода детей.
-
-## Что дальше
-
-- Long-running цикл с тикером и graceful shutdown — [../batch-reconciliation/](../batch-reconciliation/).
-- Bulk-операции (span на батч, не на элемент) — [../reindex/](../reindex/).
+Spans use the stdout batch exporter; allow its export delay or wait for normal
+process completion. See [all job examples](../README.md).

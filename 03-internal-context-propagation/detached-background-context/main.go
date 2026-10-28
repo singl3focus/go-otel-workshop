@@ -45,7 +45,9 @@ func newApp() *app {
 	}
 }
 
-// Плохой вариант: используем request ctx в фоне после ответа клиенту.
+// EN: Bad: reuse the request context after returning the HTTP response.
+//
+// RU: Плохой вариант: используем request ctx в фоне после ответа клиенту.
 func (a *app) handleBad(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -65,13 +67,17 @@ func (a *app) handleBad(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("bad background task scheduled\n"))
 }
 
-// Хороший вариант: сохраняем values/trace linkage, но отвязываемся от cancel родителя.
+// EN: Good: preserve trace values while detaching request cancellation.
+// The background goroutine owns cancellation of its timeout context.
+//
+// RU: Хороший вариант: сохраняем trace values и отделяем отмену запроса.
+// Отменой контекста с таймаутом управляет сама фоновая горутина.
 func (a *app) handleGood(w http.ResponseWriter, r *http.Request) {
 	bg := context.WithoutCancel(r.Context())
 	bg, cancel := context.WithTimeout(bg, 2*time.Second)
-	defer cancel()
 
 	go func() {
+		defer cancel()
 		time.Sleep(250 * time.Millisecond)
 
 		ctx, span := a.tracer.Start(bg, "background.good")

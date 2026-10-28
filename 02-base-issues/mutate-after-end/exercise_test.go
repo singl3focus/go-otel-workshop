@@ -15,12 +15,12 @@ func TestDoWork_FinalStateRecorded(t *testing.T) {
 	t.Cleanup(func() { _ = tp.Shutdown(context.Background()) })
 
 	if err := DoWork(context.Background(), tp.Tracer("test")); err != nil {
-		t.Fatalf("DoWork вернул ошибку: %v", err)
+		t.Fatalf("DoWork returned an error / DoWork вернул ошибку: %v", err)
 	}
 
 	ended := sr.Ended()
 	if len(ended) != 1 {
-		t.Fatalf("ожидался 1 завершенный span, получено %d", len(ended))
+		t.Fatalf("expected 1 ended span / ожидался 1 завершённый спан, got %d", len(ended))
 	}
 	got := ended[0]
 
@@ -31,10 +31,10 @@ func TestDoWork_FinalStateRecorded(t *testing.T) {
 		}
 	}
 	if result != "success" {
-		t.Errorf("attribute result: got %q, want %q", result, "success")
+		t.Errorf("result attribute / атрибут result: got %q, want %q", result, "success")
 	}
 
 	if got.Status().Code != codes.Ok {
-		t.Errorf("status code: got %v, want %v", got.Status().Code, codes.Ok)
+		t.Errorf("status / статус: got %v, want %v", got.Status().Code, codes.Ok)
 	}
 }

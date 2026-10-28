@@ -1,28 +1,35 @@
-# 02. Base issues - типичные ошибки OpenTelemetry
+# 02 · Common tracing mistakes
 
-Набор антипаттернов Go + OTel SDK: каждый кейс оформлен как отдельное упражнение, которое нужно пройти самостоятельно.
+[English](README.md) | [Русский](README.ru.md)
 
-## Формат упражнения
+English is the original; the Russian translation is maintained alongside it.
 
-Каждая подпапка - самостоятельный `package main` со следующей структурой:
+Four exercises isolate common SDK mistakes. All dependencies are in this module's
+`go.mod`; each subdirectory is a separate `package main`.
 
-- `problem.go` - запускаемая демонстрация антипаттерна (`go run .`);
-- `exercise.go` - функция-стаб, которую нужно починить;
-- `exercise_test.go` - тест на `tracetest.SpanRecorder`, который становится зеленым после корректного исправления (`go test .`);
-- `solution.go` - эталонное решение под build-тегом `solution`, по умолчанию не компилируется;
-- `README.md` - условие задачи.
+| Exercise | Repair | Test observes |
+| --- | --- | --- |
+| [missing-span-end](missing-span-end/README.md) | Finish the operation | One ended span with its attribute |
+| [missing-tracerprovider-shutdown](missing-tracerprovider-shutdown/README.md) | Flush and shut down | One exported span and exporter shutdown |
+| [mutate-after-end](mutate-after-end/README.md) | Record final state before End | `result=success` and Ok status |
+| [new-root-context](new-root-context/README.md) | Keep incoming context | TraceID and parent/child linkage |
 
-## Как проходить
+## Workflow
 
-1. Зайти в подпапку нужного кейса.
-2. Запустить `go run .` и посмотреть на поведение сломанного кода.
-3. Открыть `exercise.go`, починить функцию.
-4. Убедиться, что `go test .` проходит.
-5. Опционально сверить свой вариант с `solution.go`.
+From this directory:
 
-## Список упражнений
+```sh
+cd missing-span-end
+go run .
+go test .
+go test -tags=solution .
+```
 
-- [missing-span-end/](missing-span-end/) - забыли `span.End()`.
-- [missing-tracerprovider-shutdown/](missing-tracerprovider-shutdown/) - выход процесса без `tp.Shutdown()`.
-- [mutate-after-end/](mutate-after-end/) - мутация span после `End()`.
-- [new-root-context/](new-root-context/) - потеря входящего trace context через `context.Background()`.
+`problem.go` demonstrates the mistake; `exercise.go` is your answer.
+The ordinary test starts red. Repair the exercise, then compare with `solution.go`.
+The `solution` build tag excludes your answer and runs the **same tests** on the
+reference implementation. It does not turn `problem.go` into a corrected demo.
+
+Module-wide reference check: `go test -tags=solution ./...`.
+For shutdown tests, a retaining test exporter preserves the exported spans after
+shutdown; the SDK's stock in-memory exporter clears them at shutdown.

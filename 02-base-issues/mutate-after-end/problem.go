@@ -12,7 +12,10 @@ import (
 	baseissues "github.com/singl3focus/go-otel-workshop/02-base-issues"
 )
 
-// =========================
+// EN: Only data recorded before End appears in the exported span.
+// Mutations after End are ignored by a completed SDK span.
+//
+// RU: =========================
 // В выводе ты увидишь только то, что было записано до End().
 // Интерфейс Span в Go после End() больше не должен обновляться.
 // =========================
@@ -36,12 +39,14 @@ func main() {
 	span.SetStatus(codes.Ok, "all good so far")
 	span.End()
 
-	// ПЛОХО:
+	// EN: BAD: these mutations happen after the span has ended.
+	//
+	// RU: ПЛОХО:
 	// После End() эти изменения уже не действительны - невалидная логика.
 	span.SetAttributes(attribute.String("phase", "after-end"))
 	span.AddEvent("late-event")
 	span.SetStatus(codes.Error, "too late")
 
-	log.Println("span already ended; late mutations should be ignored")
+	log.Println("span already ended; late mutations are ignored / спан завершён, поздние изменения игнорируются")
 	time.Sleep(500 * time.Millisecond)
 }

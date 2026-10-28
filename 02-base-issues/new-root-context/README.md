@@ -1,27 +1,29 @@
-# Exercise: new root context
+# Exercise · lost parent context
 
-## Демонстрация проблемы
+[English](README.md) | [Русский](README.ru.md)
 
-```bash
+English is the original; the Russian translation is maintained alongside it.
+
+## Observe
+
+```sh
 go run .
 ```
 
-Стартует HTTP-сервер на `:8080`. В другом терминале:
+This HTTP demo listens on port 8080. Request `/orders`: the business operation replaces the incoming context and starts a separate trace.
 
-```bash
-curl -i http://localhost:8080/orders
-```
+In another terminal: `curl -i http://localhost:8080/orders` (use `curl.exe` in Windows PowerShell).
 
-В stdout будут видны два трейса вместо одного: отдельно `http.server` и отдельно `service.create_order` + `repo.save_order` — бизнес-логика обрезала входящий trace context. Код демонстрации: [problem.go](problem.go).
+## Repair
 
-## Задача
+Edit `CreateOrder` in [exercise.go](exercise.go). Preserve the incoming context in `CreateOrder` and pass its returned context to `saveOrder`. All three test spans must share a TraceID with correct parent linkage.
 
-Починить функцию `CreateOrder` в [exercise.go](exercise.go) так, чтобы прошел тест:
-
-```bash
+```sh
 go test .
+go test -tags=solution .
 ```
 
-## Эталонное решение
-
-[solution.go](solution.go) под build-тегом `solution`.
+The first command checks your answer and initially fails. The second selects
+the [reference solution](solution.go) without overwriting your work.
+Keep the broken [demonstration](problem.go) for comparison.
+Return to [all exercises](../README.md).

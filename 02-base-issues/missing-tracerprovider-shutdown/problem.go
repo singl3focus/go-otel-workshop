@@ -10,7 +10,12 @@ import (
 	baseissues "github.com/singl3focus/go-otel-workshop/02-base-issues"
 )
 
-// =========================
+// EN: WithBatcher exports through a background batch processor.
+// If the application exits immediately without tp.Shutdown(ctx),
+// buffered spans may never be exported. Shutdown flushes the processor
+// and releases its resources.
+//
+// RU: =========================
 // С WithBatcher(...) экспорт идет через batch processor.
 // Если приложение завершится сразу и не вызовет tp.Shutdown(ctx),
 // буферизированные spans могут не успеть уйти.
@@ -20,7 +25,9 @@ import (
 func main() {
 	tp := baseissues.NewTracerProvider("example-missing-shutdown")
 
-	// ПЛОХО:
+	// EN: BAD: deliberately omit tp.Shutdown.
+	//
+	// RU: ПЛОХО:
 	// Мы намеренно НЕ вызываем tp.Shutdown(...).
 	otel.SetTracerProvider(tp)
 
@@ -37,6 +44,8 @@ func main() {
 		span.End()
 	}
 
-	log.Println("program exits immediately without tracer provider shutdown after creating 100 spans")
-	// Нет time.Sleep, нет Shutdown: buffered spans могут не успеть выгрузиться.
+	log.Println("program exits after 100 spans without provider shutdown / выход после 100 спанов без shutdown провайдера")
+	// EN: No sleep and no Shutdown: buffered spans can be lost on process exit.
+	//
+	// RU: Нет time.Sleep, нет Shutdown: buffered spans могут не успеть выгрузиться.
 }

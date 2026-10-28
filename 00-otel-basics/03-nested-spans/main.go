@@ -11,11 +11,20 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Span'ы связываются через context.Context:
+// EN: Spans are linked through context.Context:
 //
-//	tracer.Start(ctx, "parent")        кладет span в новый ctx;
-//	передаем этот ctx в дочернюю функцию;
-//	tracer.Start(childCtx, "child")    видит активный span и делает его parent.
+// tracer.Start(ctx, "parent") returns a context containing the parent.
+// Pass that returned context to the child function.
+// tracer.Start(childCtx, "child") reads the active parent from it.
+//
+// Parent and child share a TraceID but have different SpanIDs.
+// The child's parent SpanID equals the parent's SpanID.
+//
+// RU: Span'ы связываются через context.Context:
+//
+// tracer.Start(ctx, "parent")        кладет span в новый ctx;
+// передаем этот ctx в дочернюю функцию;
+// tracer.Start(childCtx, "child")    видит активный span и делает его parent.
 //
 // В выводе у parent'а и child'а одинаковый TraceID и разные SpanID;
 // у child'а ParentSpanID совпадает со SpanID parent'а.

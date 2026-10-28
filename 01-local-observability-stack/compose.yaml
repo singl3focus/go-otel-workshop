@@ -1,0 +1,25 @@
+name: go-otel-workshop
+
+services:
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.22.0
+    command: ["--config=/etc/jaeger/config.yaml"]
+    volumes:
+      - ./stack/jaeger.yaml:/etc/jaeger/config.yaml:ro
+    ports:
+      - "127.0.0.1:16686:16686"
+      - "127.0.0.1:13134:13133"
+    mem_limit: 512m
+
+  otel-collector:
+    image: otel/opentelemetry-collector:0.164.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./stack/collector.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:13133:13133"
+    depends_on:
+      jaeger:
+        condition: service_started
+    mem_limit: 256m

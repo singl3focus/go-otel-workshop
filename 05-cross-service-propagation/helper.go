@@ -62,7 +62,7 @@ func shutdownTracing(shutdown func(context.Context) error) {
 func serveInventory(listener net.Listener) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST "+inventoryReservePath, func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("inventory got traceparent=%q", r.Header.Get("traceparent"))
+		log.Printf("inventory traceparent / получен traceparent=%q", r.Header.Get("traceparent"))
 		w.WriteHeader(http.StatusNoContent)
 	})
 
@@ -90,7 +90,7 @@ func startInventory() {
 }
 
 func serve(listener net.Listener, name string, handler http.Handler) {
-	log.Printf("%s listening on %s", name, listener.Addr())
+	log.Printf("%s listening / слушает %s", name, listener.Addr())
 	if err := http.Serve(listener, handler); err != nil {
 		log.Fatal(err)
 	}

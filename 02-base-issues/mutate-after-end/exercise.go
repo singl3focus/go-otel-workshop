@@ -1,3 +1,5 @@
+//go:build !solution
+
 package main
 
 import (
@@ -8,7 +10,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// DoWork выполняет операцию: фиксирует финальный атрибут result=success
+// EN: DoWork should record result=success and status Ok before ending its span.
+//
+// TODO: make the exported span contain both values and pass the test.
+//
+// RU: DoWork выполняет операцию: фиксирует финальный атрибут result=success
 // и статус Ok на span, затем завершает его.
 //
 // TODO: в итоговом span должны быть атрибут result=success и статус Ok —

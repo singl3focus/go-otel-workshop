@@ -9,7 +9,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
-func RunSolution(ctx context.Context, exporter sdktrace.SpanExporter) error {
+func Run(ctx context.Context, exporter sdktrace.SpanExporter) error {
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
 	)

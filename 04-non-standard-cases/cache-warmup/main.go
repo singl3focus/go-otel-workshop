@@ -58,7 +58,9 @@ func run(ctx context.Context) (err error) {
 	var wg sync.WaitGroup
 	var warmed, miss int64
 
-	// Воркеры живут внутри run() - ctx валиден до wg.Wait(),
+	// EN: Workers finish inside run; wg.Wait keeps the parent alive.
+	//
+	// RU: Воркеры живут внутри run() - ctx валиден до wg.Wait(),
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go func(id int) {
@@ -84,7 +86,11 @@ func run(ctx context.Context) (err error) {
 	return nil
 }
 
-// worker - один span на всю работу воркера, не на каждый ключ.
+// EN: worker uses one span for the worker's whole run, not one per key.
+// Individual misses are events; totals are attributes on each worker
+// and on the root. This keeps the number of spans bounded.
+//
+// RU: worker - один span на всю работу воркера, не на каждый ключ.
 //
 // Почему: 1M ключей × span = взрыв трассировки. Отдельные мисс-события идут
 // через span.AddEvent, агрегаты - через атрибуты воркера. В root поднимаются
@@ -113,6 +119,8 @@ func worker(ctx context.Context, tracer trace.Tracer, id int, tasks <-chan strin
 
 func warmOne(key string) bool {
 	time.Sleep(2 * time.Millisecond)
-	// имитация: ~10% ключей отсутствуют в источнике
+	// EN: Simulate missing source keys with a deterministic length rule.
+	//
+	// RU: Имитируем отсутствующие ключи детерминированным правилом по длине строки.
 	return len(key)%10 != 0
 }

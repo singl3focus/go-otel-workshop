@@ -12,14 +12,23 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
-// Что можно навесить на span между Start и End:
+// EN: Enrich a recording span between Start and End:
 //
-//	SetAttributes — структурированные key/value (фильтр в бэкенде).
-//	AddEvent      — момент времени внутри span'а (лог-как-событие).
-//	SetStatus     — финальный статус: codes.Ok / codes.Error.
-//	RecordError   — кладет error как event со стектрейсом и atom-атрибутами.
+// SetAttributes adds structured key/value data.
+// AddEvent records a timestamped event inside the span.
+// SetStatus marks the operation as Ok or Error (Unset is the default).
+// RecordError adds an exception event; stack capture is opt-in.
 //
-// RecordError не выставляет статус Error сам — нужно дополнить SetStatus.
+// RecordError does not set Error status. Call SetStatus explicitly.
+//
+// RU: Между Start и End записывающий span можно дополнить:
+//
+// SetAttributes добавляет структурированные пары ключ/значение.
+// AddEvent записывает событие с отметкой времени.
+// SetStatus задаёт Ok или Error; исходный статус — Unset.
+// RecordError добавляет событие исключения; стек включается отдельно.
+//
+// RecordError сам не задаёт статус Error: нужен явный SetStatus.
 func main() {
 	exp, _ := stdouttrace.New(stdouttrace.WithPrettyPrint())
 	tp := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exp))

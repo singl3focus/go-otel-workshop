@@ -1,57 +1,63 @@
-# 01. Local observability stack
+# 01 · HTTP instrumentation and OTLP export
 
-Два HTTP-приложения с одинаковыми эндпоинтами и идентичной бизнес-логикой,
-но с двумя подходами к HTTP-инструментации OpenTelemetry. Общий модуль,
-общий пакет [observability/](observability/) (OTel SDK setup — TracerProvider,
-OTLP/gRPC exporter, propagator).
+[English](README.md) | [Русский](README.ru.md)
 
-## Структура
+English is the original; the Russian translation is maintained alongside it.
 
-```
-01-local-observability-stack/
-  go.mod                       # один общий модуль
-  observability/               # общий пакет: Setup() + ShutdownFunc
-  app-manual/                  # ручной middleware: span на запрос пишем руками
-    internal/server/middleware/
-      request_tracing.go       # propagator.Extract → tracer.Start → SetAttributes → End
-      request_logging.go       # slog с trace_id из ctx
-  app-otelhttp/                # auto-инструментация
-    internal/server/
-      router.go                # otelhttp.NewHandler(...) + WithSpanNameFormatter
-      middleware/
-        request_logging.go     # тот же логгер, span читаем из ctx
-```
+Two HTTP applications share one [observability package](observability/otel.go)
+and intentionally duplicate their small business layer for side-by-side reading.
+The package configures a batch TracerProvider, resource, OTLP/gRPC exporter,
+and W3C TraceContext/Baggage propagators.
 
-Бизнес-логика (`internal/service/`, `internal/server/handlers/`,
-`internal/config/`) дублируется намеренно — каждый app можно читать сверху
-вниз как самостоятельный пример.
+| Task | [app-manual](app-manual/README.md) | [app-otelhttp](app-otelhttp/README.md) |
+| --- | --- | --- |
+| Extract inbound context | `propagator.Extract` | `otelhttp.NewHandler` |
+| Create/end server span | Custom tracing middleware | `otelhttp` |
+| HTTP attributes and 5xx status | Explicit attributes/status | Library instrumentation |
+| Route name | Custom formatter | `WithSpanNameFormatter` and `r.Pattern` |
+| Log correlation | Read active span from context | Same approach |
 
-## Что показывает сравнение
+A pinned [Collector + Jaeger stack](stack/README.md) is now included. Follow that
+guide to start the backends, inspect traces, and run the opt-in integration tests.
+Its live interoperability check is still pending; the Compose and test code have
+been validated without starting the services. You can also use an existing receiver. Port **4317** is gRPC; port 4318
+typically receives OTLP/HTTP and is not interchangeable with this exporter.
 
-| Этап | app-manual | app-otelhttp |
-|---|---|---|
-| Extract propagator из HTTP-заголовков | руками: `otel.GetTextMapPropagator().Extract(...)` | внутри `otelhttp.NewHandler` |
-| Создание server-span | `tracer.Start(..., trace.WithSpanKind(SpanKindServer))` | `otelhttp` |
-| Атрибуты `http.request.method` / `url.path` / `server.address` / `http.response.status_code` | руками через `semconv` v1.26 | `otelhttp` (semconv внутри пакета) |
-| Имя span (`METHOD /route`) | `span.SetName(r.Method + " " + httpRoute(r))` | `WithSpanNameFormatter` поверх `r.Pattern` (Go 1.22+ ServeMux) |
-| `SetStatus(codes.Error, ...)` для 5xx | руками | `otelhttp` |
-| `slog`-логгер с `trace_id`/`span_id` | общий `request_logging.go` | общий `request_logging.go` |
+## Run with a receiver on localhost
 
-`request_logging` в обоих app одинаковый: ему всё равно, кто положил активный
-span в `ctx` — он просто читает его через `trace.SpanContextFromContext`. Это
-и иллюстрирует точку разрыва: span на запрос — единственное, что меняется.
+From this directory, in Bash:
 
-## Как запускать
-
-```bash
-cd app-manual && make run
-# в другом терминале
-curl -i http://localhost:8080/work?delay_ms=200
+```sh
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+go run ./app-manual/cmd/server
 ```
 
-То же самое для `app-otelhttp/`. Оба слушают `:8080` по умолчанию (`HTTP_PORT`).
+In PowerShell:
 
-Env vars: `APP_NAME`, `HTTP_PORT`, `LOG_LEVEL`, `OTEL_EXPORTER_OTLP_ENDPOINT`.
-По умолчанию OTLP-эндпоинт — `http://otel-collector:4317`; если коллектора нет,
-для локальных проверок поднимите `otel-collector` или поставьте
-`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317` и слушайте на хосте.
+```powershell
+$env:OTEL_EXPORTER_OTLP_ENDPOINT = 'http://localhost:4317'
+go run ./app-manual/cmd/server
+```
+
+In another terminal (`curl.exe` in Windows PowerShell):
+
+```sh
+curl -i 'http://localhost:8080/work?delay_ms=200'
+curl -i 'http://localhost:8080/error?status=500'
+```
+
+Stop the first application, then run `go run ./app-otelhttp/cmd/server`.
+Compare `service.work` child spans and the request logs' `trace_id`/`span_id`.
+Use a real receiver/backend to inspect exported spans; an HTTP 200 alone does
+not establish successful export. Export errors can appear asynchronously.
+
+| Environment variable | Default |
+| --- | --- |
+| `APP_NAME` | `local-observability-app` |
+| `HTTP_PORT` | `8080` |
+| `LOG_LEVEL` | `info` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4317` |
+
+`http://` selects insecure gRPC; `https://` enables TLS. Host-only endpoints
+are treated as insecure. These choices are for a controlled local exercise.
+See [troubleshooting](../docs/troubleshooting.md) if spans do not arrive.

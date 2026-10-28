@@ -14,7 +14,7 @@ func LoadFromEnv() Config {
 		AppName:              envOrDefault("APP_NAME", "local-observability-app"),
 		HTTPPort:             envOrDefault("HTTP_PORT", "8080"),
 		LogLevel:             envOrDefault("LOG_LEVEL", "info"),
-		OTLPExporterEndpoint: envOrDefault("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317"),
+		OTLPExporterEndpoint: envOrDefault("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"),
 	}
 }
 

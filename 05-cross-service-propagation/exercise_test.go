@@ -43,17 +43,17 @@ func TestReserveInventory_PropagatesTraceContext(t *testing.T) {
 	err := ReserveInventory(ctx, downstream.Client(), downstream.URL)
 	parent.End()
 	if err != nil {
-		t.Fatalf("ReserveInventory вернул ошибку: %v", err)
+		t.Fatalf("ReserveInventory returned an error / ReserveInventory вернул ошибку: %v", err)
 	}
 
 	select {
 	case got := <-downstreamTraceID:
 		if got != parent.SpanContext().TraceID() {
-			t.Fatalf("downstream TraceID = %s, ожидался %s — trace context не перешел через HTTP",
+			t.Fatalf("downstream TraceID = %s, expected / ожидался %s; context did not cross HTTP / контекст не перешёл через HTTP",
 				got, parent.SpanContext().TraceID())
 		}
 	default:
-		t.Fatal("downstream handler не был вызван")
+		t.Fatal("downstream handler was not called / downstream handler не был вызван")
 	}
 
 	ended := sr.Ended()
@@ -69,17 +69,17 @@ func TestReserveInventory_PropagatesTraceContext(t *testing.T) {
 	}
 
 	if clientSpan == nil {
-		t.Fatal("ожидался outbound client span — оберни Transport через otelhttp.NewTransport")
+		t.Fatal("expected an outbound client span: use otelhttp.NewTransport / ожидался исходящий клиентский спан: используйте otelhttp.NewTransport")
 	}
 	if serverSpan == nil {
-		t.Fatal("ожидался downstream server span")
+		t.Fatal("expected a downstream server span / ожидался серверный спан downstream")
 	}
 	if serverSpan.SpanContext().TraceID() != parent.SpanContext().TraceID() {
-		t.Errorf("downstream server span TraceID = %s, ожидался %s",
+		t.Errorf("downstream server span TraceID = %s, expected / ожидался %s",
 			serverSpan.SpanContext().TraceID(), parent.SpanContext().TraceID())
 	}
 	if serverSpan.Parent().SpanID() != clientSpan.SpanContext().SpanID() {
-		t.Errorf("downstream server parent_span_id = %s, ожидался client span %s",
+		t.Errorf("downstream server parent_span_id = %s, expected client span / ожидался клиентский спан %s",
 			serverSpan.Parent().SpanID(), clientSpan.SpanContext().SpanID())
 	}
 }

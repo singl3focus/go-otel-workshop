@@ -1,21 +1,27 @@
-# Exercise: missing `tp.Shutdown()`
+# Exercise · missing TracerProvider.Shutdown()
 
-## Демонстрация проблемы
+[English](README.md) | [Русский](README.ru.md)
 
-```bash
+English is the original; the Russian translation is maintained alongside it.
+
+## Observe
+
+```sh
 go run .
 ```
 
-Процесс создает 100 span'ов и завершается сразу после `span.End()` без вызова `tp.Shutdown()`. Поскольку экспорт идет через `WithBatcher`, spans уходят в буфер BSP и могут не успеть выгрузиться - в stdout часто будет видна только часть данных или вообще ничего. Код демонстрации: [problem.go](problem.go).
+The demo creates 100 spans and exits immediately. A batch processor can lose queued spans before its background export runs.
 
-## Задача
+## Repair
 
-Починить функцию `Run` в [exercise.go](exercise.go) так, чтобы прошел тест:
+Edit `Run` in [exercise.go](exercise.go). Before returning, export the ended span and shut down the provider. The test checks both export and exporter shutdown. Use a bounded shutdown context in real applications.
 
-```bash
+```sh
 go test .
+go test -tags=solution .
 ```
 
-## Эталонное решение
-
-[solution.go](solution.go) под build-тегом `solution`.
+The first command checks your answer and initially fails. The second selects
+the [reference solution](solution.go) without overwriting your work.
+Keep the broken [demonstration](problem.go) for comparison.
+Return to [all exercises](../README.md).

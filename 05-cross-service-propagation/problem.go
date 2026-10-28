@@ -22,7 +22,9 @@ func checkoutHandler() http.HandlerFunc {
 		ctx, span := tracer.Start(r.Context(), "gateway.checkout")
 		defer span.End()
 
-		// ПЛОХО:
+		// EN: BAD: a plain http.Client neither creates a client span nor injects traceparent.
+		//
+		// RU: ПЛОХО:
 		// Обычный http.Client не создает client span и не инжектит traceparent.
 		if err := reserveInventoryWithoutClientInstrumentation(ctx); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -30,7 +32,7 @@ func checkoutHandler() http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("checkout ok\n"))
+		_, _ = w.Write([]byte("checkout ok / оформление успешно\n"))
 	}
 }
 

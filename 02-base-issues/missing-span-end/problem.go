@@ -11,13 +11,15 @@ import (
 	baseissues "github.com/singl3focus/go-otel-workshop/02-base-issues"
 )
 
-// =========================
-// good.span завершится и уйдет в export path.
-// broken.span — нет, потому что завершение span связано с End(),
-// а Shutdown завершает processors, но не "додумывает" за тебя незавершенные spans.
-// TracerProvider.Shutdown(ctx) закрывает провайдер и processors;
-// после него методы становятся no-op.
-// =========================
+// EN: good.span reaches the export pipeline because it is ended.
+// broken.span does not: Shutdown stops processors and flushes ended spans,
+// but does not end spans on the application's behalf.
+// After provider shutdown, newly started spans are non-recording.
+//
+// RU: good.span попадёт в экспорт, потому что вызван End.
+// broken.span не попадёт: Shutdown выгружает завершённые спаны и останавливает
+// процессоры, но не завершает спаны за приложение.
+// После shutdown новые спаны провайдера не записываются.
 
 func main() {
 	ctx := context.Background()
@@ -44,12 +46,14 @@ func main() {
 		_, span := tracer.Start(ctx, "broken.span")
 		span.SetAttributes(attribute.String("demo", "missing-end"))
 
-		// ПЛОХО:
+		// EN: BAD: span.End is missing, so processor.OnEnd is never called.
+		//
+		// RU: ПЛОХО:
 		// span.End() забыли.
 		// Такой span не пройдет нормальный путь завершения через processor.OnEnd(...).
 		_ = span
 	}
 
-	log.Println("done, wait a bit...")
+	log.Println("done, wait a bit... / готово, дождитесь экспорта...")
 	time.Sleep(500 * time.Millisecond)
 }

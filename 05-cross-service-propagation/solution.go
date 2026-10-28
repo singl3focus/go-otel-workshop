@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-func ReserveInventorySolution(ctx context.Context, client *http.Client, inventoryBaseURL string) error {
+func ReserveInventory(ctx context.Context, client *http.Client, inventoryBaseURL string) error {
 	tracer := otel.Tracer(tracerName)
 	ctx, span := tracer.Start(ctx, "checkout.reserve_inventory")
 	defer span.End()

@@ -57,14 +57,17 @@ func run() error {
 	}
 }
 
-// runOnce - один тик реконсиляции.
+// EN: runOnce executes one reconciliation tick with a NEW root span.
+// An unended span around the entire loop hides individual run durations.
+// Child spans can still be exported independently of that root.
 //
-// Главное: КАЖДЫЙ тик - НОВЫЙ root span. Если обернуть всю for-петлю
-// одним span'ом, трасса растёт бесконечно, экспортер не может её закрыть,
-// в UI это выглядит как зависшая операция.
+// WithNewRoot makes the boundary explicit even if a parent is present.
 //
-// WithNewRoot делает семантику явной: даже если в parent ctx вдруг окажется
-// активный span, мы его не наследуем.
+// RU: runOnce выполняет один тик реконсиляции с НОВЫМ корневым спаном.
+// Незавершённый спан вокруг всего цикла скрывает длительность отдельных запусков.
+// Дочерние спаны при этом могут экспортироваться независимо от корневого.
+//
+// WithNewRoot явно задаёт границу, даже если в контексте есть родитель.
 func runOnce(parent context.Context, tracer trace.Tracer) {
 	ctx, cancel := context.WithTimeout(parent, tickTimeout)
 	defer cancel()

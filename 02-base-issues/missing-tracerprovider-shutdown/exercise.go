@@ -1,3 +1,5 @@
+//go:build !solution
+
 package main
 
 import (
@@ -7,7 +9,12 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
-// Run симулирует жизненный цикл приложения: создает TracerProvider с batch-процессором,
+// EN: Run models an application with a batch TracerProvider.
+//
+// TODO: export all finished spans and shut down the provider before
+// returning. Make exercise_test.go pass.
+//
+// RU: Run симулирует жизненный цикл приложения: создает TracerProvider с batch-процессором,
 // выполняет работу и возвращает управление.
 //
 // TODO: все открытые spans должны быть экспортированы до возврата из Run —
